@@ -27,25 +27,25 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ photos, onChange }) =>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <UploadBox
           label="صورة الرخصة / License Photo"
-          photoKey="license"
+          photoKey="photo_license"
           file={photos.license}
           onChange={onChange}
         />
         <UploadBox
           label="صورة التصريح / Permit Photo"
-          photoKey="permit"
+          photoKey="photo_permit"
           file={photos.permit}
           onChange={onChange}
         />
         <UploadBox
           label="صورة المركبة / Vehicle Photo"
-          photoKey="vehicle"
+          photoKey="photo_vehicle"
           file={photos.vehicle}
           onChange={onChange}
         />
         <UploadBox
           label="صورة اللوحة / Plate Photo"
-          photoKey="plate"
+          photoKey="photo_plate"
           file={photos.plate}
           onChange={onChange}
         />
@@ -160,7 +160,6 @@ const UploadBox: React.FC<UploadBoxProps> = ({ label, photoKey, file, onChange }
           ref={fileInputRef}
           onChange={handleFileChange}
           accept="image/*"
-          capture="environment" // Auto opens camera on mobile devices
           className="hidden"
         />
 

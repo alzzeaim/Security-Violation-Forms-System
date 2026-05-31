@@ -154,6 +154,37 @@ export const PDFExporter: React.FC<PDFExporterProps> = ({ data, onSuccess, valid
                     <span>{data.supervisor_name || "---"}</span>
                   </div>
                 </div>
+
+                {/* Photos Preview */}
+                {(data.photo_license || data.photo_permit || data.photo_vehicle || data.photo_plate) && (
+                  <div className="pt-4 border-t border-gray-100 space-y-2">
+                    <span className="font-bold text-gray-700 block">الصور المرفقة / Attached Photos:</span>
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { file: data.photo_license, label: "الرخصة / License" },
+                        { file: data.photo_permit, label: "التصريح / Permit" },
+                        { file: data.photo_vehicle, label: "المركبة / Vehicle" },
+                        { file: data.photo_plate, label: "اللوحة / Plate" },
+                      ].map((photo, idx) => (
+                        <div key={idx} className="text-center">
+                          <div className="border border-gray-200 rounded-lg h-20 flex items-center justify-center overflow-hidden bg-gray-50">
+                            {photo.file ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={URL.createObjectURL(photo.file)}
+                                alt={photo.label}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-[9px] text-gray-400">لا يوجد</span>
+                            )}
+                          </div>
+                          <span className="text-[9px] font-semibold text-gray-500 mt-1 block">{photo.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
