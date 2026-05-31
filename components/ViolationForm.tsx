@@ -39,6 +39,8 @@ const INITIAL_STATE: ViolationFormData = {
   photo_permit: null,
   photo_vehicle: null,
   photo_plate: null,
+  photo_id: null,
+  photo_others: [],
   officer_employee_id: null,
   officer_name: "",
   officer_employee_number: "",
@@ -159,7 +161,7 @@ export const ViolationForm: React.FC = () => {
     if (emp) {
       setFormData((prev) => ({
         ...prev,
-        violator_employee_id: emp.id,
+        violator_employee_id: emp.id === "custom" ? null : emp.id,
         violator_name: emp.name,
         violator_nationality: emp.nationality || "سعودي",
         violator_organization: emp.organization || "جهة العمل",
@@ -184,7 +186,7 @@ export const ViolationForm: React.FC = () => {
     if (emp) {
       setFormData((prev) => ({
         ...prev,
-        officer_employee_id: emp.id,
+        officer_employee_id: emp.id === "custom" ? null : emp.id,
         officer_name: emp.name,
         officer_employee_number: emp.employee_number,
       }));
@@ -203,7 +205,7 @@ export const ViolationForm: React.FC = () => {
     if (emp) {
       setFormData((prev) => ({
         ...prev,
-        supervisor_employee_id: emp.id,
+        supervisor_employee_id: emp.id === "custom" ? null : emp.id,
         supervisor_name: emp.name,
         supervisor_employee_number: emp.employee_number,
       }));
@@ -628,8 +630,11 @@ export const ViolationForm: React.FC = () => {
               permit: formData.photo_permit,
               vehicle: formData.photo_vehicle,
               plate: formData.photo_plate,
+              id: formData.photo_id,
             }}
+            otherPhotos={formData.photo_others}
             onChange={(key, file) => updateField(key as keyof ViolationFormData, file)}
+            onOtherPhotosChange={(files) => updateField("photo_others", files)}
           />
         </div>
 

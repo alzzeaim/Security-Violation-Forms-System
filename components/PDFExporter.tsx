@@ -156,15 +156,17 @@ export const PDFExporter: React.FC<PDFExporterProps> = ({ data, onSuccess, valid
                 </div>
 
                 {/* Photos Preview */}
-                {(data.photo_license || data.photo_permit || data.photo_vehicle || data.photo_plate) && (
+                {(data.photo_license || data.photo_permit || data.photo_vehicle || data.photo_plate || data.photo_id || data.photo_others.length > 0) && (
                   <div className="pt-4 border-t border-gray-100 space-y-2">
                     <span className="font-bold text-gray-700 block">الصور المرفقة / Attached Photos:</span>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                       {[
                         { file: data.photo_license, label: "الرخصة / License" },
                         { file: data.photo_permit, label: "التصريح / Permit" },
                         { file: data.photo_vehicle, label: "المركبة / Vehicle" },
                         { file: data.photo_plate, label: "اللوحة / Plate" },
+                        { file: data.photo_id, label: "الهوية / ID" },
+                        ...data.photo_others.map((file, idx) => ({ file, label: `أخرى ${idx + 1}` })),
                       ].map((photo, idx) => (
                         <div key={idx} className="text-center">
                           <div className="border border-gray-200 rounded-lg h-20 flex items-center justify-center overflow-hidden bg-gray-50">

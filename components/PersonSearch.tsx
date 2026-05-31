@@ -134,6 +134,21 @@ export const PersonSearch: React.FC<PersonSearchProps> = ({
     setIsOpen(false);
   };
 
+  const handleCustomSubmit = () => {
+    if (!query.trim()) return;
+    const customEmp: Employee = {
+      id: "custom",
+      name: query.trim(),
+      employee_number: "---",
+      role: role,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+    onChange(customEmp);
+    setQuery("");
+    setIsOpen(false);
+  };
+
   const handleClear = () => {
     onChange(null);
     setQuery("");
@@ -209,6 +224,18 @@ export const PersonSearch: React.FC<PersonSearchProps> = ({
                       </button>
                     </li>
                   ))}
+                  {query.trim().length > 0 && (
+                    <li key="custom-entry">
+                      <button
+                        type="button"
+                        onClick={handleCustomSubmit}
+                        className="w-full text-right px-4 py-3 min-h-[48px] hover:bg-accent/15 focus:bg-accent/15 focus:outline-none transition-colors flex flex-col justify-center cursor-pointer bg-gray-50 border-t border-gray-200"
+                      >
+                        <span className="text-sm font-semibold text-primary">إعتماد المكتوب: {query.trim()}</span>
+                        <span className="text-xs text-gray-500 mt-0.5">تسجيل كإدخال يدوي</span>
+                      </button>
+                    </li>
+                  )}
                 </ul>
               )}
             </div>

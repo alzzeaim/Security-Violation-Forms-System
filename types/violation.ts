@@ -58,6 +58,8 @@ export interface ViolationFormData {
   photo_permit: File | null;
   photo_vehicle: File | null;
   photo_plate: File | null;
+  photo_id: File | null;
+  photo_others: File[];
 
   // Officer (person filing the report)
   officer_employee_id: string | null;
