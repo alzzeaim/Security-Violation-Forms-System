@@ -654,11 +654,20 @@ export const ViolationForm: React.FC = () => {
                 value={selectedOfficer}
                 onChange={handleOfficerSelect}
               />
-              {formData.officer_employee_number && (
+              {selectedOfficer?.id === "custom" ? (
+                <div className="mt-2">
+                  <Input
+                    label="الرقم الوظيفي (اختياري) / Emp No"
+                    placeholder="أدخل الرقم الوظيفي..."
+                    value={formData.officer_employee_number}
+                    onChange={(e) => updateField("officer_employee_number", e.target.value)}
+                  />
+                </div>
+              ) : formData.officer_employee_number ? (
                 <div className="text-xs text-gray-500 font-bold bg-white p-2 border border-gray-150 rounded-lg">
                   الرقم الوظيفي / Emp No: <span className="font-mono text-primary">{formData.officer_employee_number}</span>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Supervisor */}
@@ -670,11 +679,20 @@ export const ViolationForm: React.FC = () => {
                 value={selectedSupervisor}
                 onChange={handleSupervisorSelect}
               />
-              {formData.supervisor_employee_number && (
+              {selectedSupervisor?.id === "custom" ? (
+                <div className="mt-2">
+                  <Input
+                    label="الرقم الوظيفي (اختياري) / Emp No"
+                    placeholder="أدخل الرقم الوظيفي..."
+                    value={formData.supervisor_employee_number}
+                    onChange={(e) => updateField("supervisor_employee_number", e.target.value)}
+                  />
+                </div>
+              ) : formData.supervisor_employee_number ? (
                 <div className="text-xs text-gray-500 font-bold bg-white p-2 border border-gray-150 rounded-lg">
                   الرقم الوظيفي / Emp No: <span className="font-mono text-primary">{formData.supervisor_employee_number}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

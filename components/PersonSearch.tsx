@@ -139,7 +139,7 @@ export const PersonSearch: React.FC<PersonSearchProps> = ({
     const customEmp: Employee = {
       id: "custom",
       name: query.trim(),
-      employee_number: "---",
+      employee_number: "",
       role: role,
       is_active: true,
       created_at: new Date().toISOString(),
@@ -188,6 +188,12 @@ export const PersonSearch: React.FC<PersonSearchProps> = ({
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && query.trim()) {
+                e.preventDefault();
+                handleCustomSubmit();
+              }
+            }}
             icon={
               isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
