@@ -11,9 +11,9 @@ interface PhotoUploadProps {
     plate: File | null;
     id: File | null;
   };
-  otherPhotos: File[];
+  otherPhotos: { file: File; description: string }[];
   onChange: (key: string, file: File | null) => void;
-  onOtherPhotosChange: (files: File[]) => void;
+  onOtherPhotosChange: (files: { file: File; description: string }[]) => void;
 }
 
 interface UploadBoxProps {
@@ -297,8 +297,8 @@ const UploadBox: React.FC<UploadBoxProps> = ({ label, photoKey, file, onChange }
 
 // ─── Other Photos Section (Unlimited) ───────────────────────────
 interface OtherPhotosSectionProps {
-  files: File[];
-  onFilesChange: (files: File[]) => void;
+  files: { file: File; description: string }[];
+  onFilesChange: (files: { file: File; description: string }[]) => void;
 }
 
 const OtherPhotosSection: React.FC<OtherPhotosSectionProps> = ({ files, onFilesChange }) => {
@@ -356,10 +356,10 @@ const OtherPhotosSection: React.FC<OtherPhotosSectionProps> = ({ files, onFilesC
     const selectedFiles = e.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
 
-    const newFiles: File[] = [];
+    const newFiles: { file: File; description: string }[] = [];
     for (let i = 0; i < selectedFiles.length; i++) {
       const compressed = await compressImage(selectedFiles[i]);
-      newFiles.push(compressed);
+      newFiles.push({ file: compressed, description: "" });
     }
 
     onFilesChange([...files, ...newFiles]);
@@ -374,6 +374,12 @@ const OtherPhotosSection: React.FC<OtherPhotosSectionProps> = ({ files, onFilesC
     onFilesChange(updated);
   };
 
+  const handleDescriptionChange = (index: number, desc: string) => {
+    const updated = [...files];
+    updated[index].description = desc;
+    onFilesChange(updated);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -381,10 +387,16 @@ const OtherPhotosSection: React.FC<OtherPhotosSectionProps> = ({ files, onFilesC
         <span className="text-[10px] text-gray-400">{files.length} صورة مرفقة</span>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {/* Preview existing "other" photos */}
-        {files.map((file, idx) => (
-          <OtherPhotoItem key={idx} file={file} index={idx} onRemove={handleRemoveFile} />
+        {files.map((item, idx) => (
+          <OtherPhotoItem 
+            key={idx} 
+            item={item} 
+            index={idx} 
+            onRemove={handleRemoveFile} 
+            onDescriptionChange={handleDescriptionChange} 
+          />
         ))}
 
         {/* Add New Photo Button */}
@@ -438,42 +450,54 @@ const OtherPhotosSection: React.FC<OtherPhotosSectionProps> = ({ files, onFilesC
 
 // ─── Single Other Photo Item ────────────────────────────────────
 interface OtherPhotoItemProps {
-  file: File;
+  item: { file: File; description: string };
   index: number;
   onRemove: (index: number) => void;
+  onDescriptionChange: (index: number, desc: string) => void;
 }
 
-const OtherPhotoItem: React.FC<OtherPhotoItemProps> = ({ file, index, onRemove }) => {
+const OtherPhotoItem: React.FC<OtherPhotoItemProps> = ({ item, index, onRemove, onDescriptionChange }) => {
   const [preview, setPreview] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const objectUrl = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(item.file);
     setPreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
+  }, [item.file]);
 
   return (
-    <div className="relative min-h-[100px] rounded-xl border-2 border-success bg-success/5 overflow-hidden group">
-      {preview && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt={`صورة إضافية ${index + 1}`}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      )}
-      {/* Index badge */}
-      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md z-10">
-        {index + 1}
+    <div className="flex flex-col gap-2 group">
+      <div className="relative min-h-[100px] rounded-xl border-2 border-success bg-success/5 overflow-hidden">
+        {preview && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={preview}
+            alt={`صورة إضافية ${index + 1}`}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        {/* Index badge */}
+        <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md z-10">
+          {index + 1}
+        </div>
+        {/* Remove button */}
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          className="absolute top-1 right-1 p-1 bg-danger hover:bg-danger-dark text-white rounded-full shadow-md z-20 cursor-pointer transition-transform hover:scale-110"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
       </div>
-      {/* Remove button */}
-      <button
-        type="button"
-        onClick={() => onRemove(index)}
-        className="absolute top-1 right-1 p-1 bg-danger hover:bg-danger-dark text-white rounded-full shadow-md z-20 cursor-pointer transition-transform hover:scale-110"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
+      
+      {/* Description Input */}
+      <input
+        type="text"
+        placeholder="نص توضيحي للصورة..."
+        value={item.description}
+        onChange={(e) => onDescriptionChange(index, e.target.value)}
+        className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors bg-white shadow-sm"
+      />
     </div>
   );
 };

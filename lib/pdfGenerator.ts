@@ -13,31 +13,23 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 export const generateViolationPDF = async (data: ViolationFormData): Promise<void> => {
   // Convert images to base64 data URLs
-  const photosBase64: Record<string, string | null> = {
-    license: null,
-    permit: null,
-    vehicle: null,
-    plate: null,
-    id: null,
-  };
+  const allPhotos: { src: string; label: string }[] = [];
 
-  if (data.photo_license) photosBase64.license = await fileToBase64(data.photo_license);
-  if (data.photo_permit) photosBase64.permit = await fileToBase64(data.photo_permit);
-  if (data.photo_vehicle) photosBase64.vehicle = await fileToBase64(data.photo_vehicle);
-  if (data.photo_plate) photosBase64.plate = await fileToBase64(data.photo_plate);
-  if (data.photo_id) photosBase64.id = await fileToBase64(data.photo_id);
+  if (data.photo_license) allPhotos.push({ src: await fileToBase64(data.photo_license), label: "صورة الرخصة / License Photo" });
+  if (data.photo_permit) allPhotos.push({ src: await fileToBase64(data.photo_permit), label: "صورة التصريح / Permit Photo" });
+  if (data.photo_vehicle) allPhotos.push({ src: await fileToBase64(data.photo_vehicle), label: "صورة المركبة / Vehicle Photo" });
+  if (data.photo_plate) allPhotos.push({ src: await fileToBase64(data.photo_plate), label: "صورة اللوحة / Plate Photo" });
+  if (data.photo_id) allPhotos.push({ src: await fileToBase64(data.photo_id), label: "صورة الهوية / ID Photo" });
 
-  const othersBase64: string[] = [];
-  for (const file of data.photo_others) {
-    const base64 = await fileToBase64(file);
-    othersBase64.push(base64);
+  for (let i = 0; i < data.photo_others.length; i++) {
+    const p = data.photo_others[i];
+    const base64 = await fileToBase64(p.file);
+    allPhotos.push({ src: base64, label: p.description || `صورة إضافية / Additional Photo ${i + 1}` });
   }
 
-  const hasPhotos = Object.values(photosBase64).some((b) => b !== null) || othersBase64.length > 0;
-
-  // Helper for checkboxes
+  // Helper for checkboxes - eye-catching colors instead of white
   const cb = (checked: boolean) => `
-    <div style="width: 16px; height: 16px; border: 2px solid #4CAF50; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: #4CAF50; font-weight: bold; margin-left: 6px; flex-shrink: 0; background-color: #FFF;">
+    <div style="width: 14px; height: 14px; border: 1px solid ${checked ? '#17407A' : '#64748b'}; background-color: ${checked ? '#17407A' : '#f8fafc'}; display: inline-block; text-align: center; line-height: 14px; font-size: 11px; color: ${checked ? '#eab308' : 'transparent'}; font-weight: bold; margin-left: 6px; flex-shrink: 0; vertical-align: middle; border-radius: 2px;">
       ${checked ? "✔" : ""}
     </div>
   `;
@@ -74,21 +66,27 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     return html;
   };
 
-  // --- Page 1 (Main Form) ---
-  const page1Container = document.createElement("div");
-  page1Container.style.position = "absolute";
-  page1Container.style.left = "-9999px";
-  page1Container.style.top = "-9999px";
-  page1Container.style.width = "794px"; // A4 Width at 96DPI
-  page1Container.style.minHeight = "1123px"; // A4 Height
-  page1Container.style.backgroundColor = "#FFFFFF";
-  page1Container.style.color = "#17407A";
-  page1Container.style.padding = "40px";
-  page1Container.style.boxSizing = "border-box";
-  page1Container.style.fontFamily = "Arial, sans-serif";
-  page1Container.dir = "rtl";
+  const createPageContainer = () => {
+    const container = document.createElement("div");
+    container.style.position = "absolute";
+    container.style.left = "-9999px";
+    container.style.top = "-9999px";
+    container.style.width = "794px"; // A4 Width at 96DPI
+    container.style.height = "1123px"; // A4 Height exactly
+    container.style.backgroundColor = "#FFFFFF";
+    container.style.color = "#17407A";
+    container.style.padding = "30px 40px"; // Reduced vertical padding slightly to fit everything safely
+    container.style.boxSizing = "border-box";
+    container.style.fontFamily = "Arial, sans-serif";
+    container.dir = "rtl";
+    return container;
+  };
 
-  page1Container.innerHTML = `
+  const pagesContainers: HTMLDivElement[] = [];
+
+  // --- Page 1 (Main Form - No Signatures yet) ---
+  const page1 = createPageContainer();
+  page1.innerHTML = `
     <!-- Header -->
     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
       <div style="width: 150px; text-align: center;">
@@ -225,7 +223,7 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     </table>
 
     <!-- Section 4: Traffic Violations -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0 5px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 15px 0 5px 0;">
       <h2 style="font-size: 20px; font-weight: bold; text-decoration: underline; margin: 0;">مخالفة مرورية</h2>
       <h2 style="font-size: 18px; font-weight: bold; text-decoration: underline; margin: 0;">Traffic Violation</h2>
     </div>
@@ -236,7 +234,7 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     </div>
 
     <!-- Section 5: Misconduct Violations -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0 5px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 15px 0 5px 0;">
       <h2 style="font-size: 20px; font-weight: bold; text-decoration: underline; margin: 0;">مخالفة جنائية</h2>
       <h2 style="font-size: 18px; font-weight: bold; text-decoration: underline; margin: 0;">Misconduct Violation</h2>
     </div>
@@ -247,7 +245,7 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     </div>
 
     <!-- Section 6: Non-compliance Violations -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0 5px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 15px 0 5px 0;">
       <h2 style="font-size: 20px; font-weight: bold; text-decoration: underline; margin: 0;">مخالفة عدم التزام بأنظمة القدية</h2>
       <h2 style="font-size: 18px; font-weight: bold; text-decoration: underline; margin: 0;">Non-Compliance</h2>
     </div>
@@ -256,9 +254,11 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
       <span style="font-weight: bold; font-size: 14px;">أخرى / Other:</span>
       <span style="flex: 1; border-bottom: 1px dotted #17407A; margin: 0 10px; font-size: 13px; color: #000; text-align: center;">${data.noncompliance_other || "&nbsp;"}</span>
     </div>
+  `;
 
+  const signaturesHTML = `
     <!-- Section 7: Signatures -->
-    <div style="display: flex; justify-content: space-between; margin-top: 30px; font-weight: bold;">
+    <div style="display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; width: 100%;">
       <!-- Right: مباشر الحالة -->
       <div style="width: 45%;">
         <div style="text-decoration: underline; text-align: center; margin-bottom: 15px; font-size: 16px;">مباشر الحالة</div>
@@ -294,46 +294,65 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     </div>
 
     <!-- Footer -->
-    <div style="margin-top: 30px; border-top: 1px solid #17407A; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold;">
-      <span>النسخة 3</span>
-      <span>إدارة أمن القدية Site Security Operations</span>
-      <span>نموذج (33)</span>
-    </div>
-    <div style="text-align: center; font-size: 11px; color: #6B7280; margin-top: 5px; font-family: monospace;">
-      This email \\ document has been classified as public
+    <div style="position: absolute; bottom: 30px; left: 40px; right: 40px;">
+      <div style="border-top: 1px solid #17407A; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold;">
+        <span>النسخة 3</span>
+        <span>إدارة أمن القدية Site Security Operations</span>
+        <span>نموذج (33)</span>
+      </div>
+      <div style="text-align: center; font-size: 11px; color: #6B7280; margin-top: 5px; font-family: monospace;">
+        This email \\ document has been classified as public
+      </div>
     </div>
   `;
 
-  document.body.appendChild(page1Container);
+  if (allPhotos.length === 0) {
+    page1.innerHTML += signaturesHTML;
+    pagesContainers.push(page1);
+  } else {
+    pagesContainers.push(page1);
+    const CHUNK_SIZE = 9; // 3 rows of 3 photos max per page
 
-  // --- Page 2 (Photos) ---
-  let page2Container: HTMLDivElement | null = null;
-  if (hasPhotos) {
-    page2Container = document.createElement("div");
-    page2Container.style.position = "absolute";
-    page2Container.style.left = "-9999px";
-    page2Container.style.top = "-9999px";
-    page2Container.style.width = "794px";
-    page2Container.style.minHeight = "1123px";
-    page2Container.style.backgroundColor = "#FFFFFF";
-    page2Container.style.color = "#17407A";
-    page2Container.style.padding = "40px";
-    page2Container.style.boxSizing = "border-box";
-    page2Container.style.fontFamily = "Arial, sans-serif";
-    page2Container.dir = "rtl";
+    for (let i = 0; i < allPhotos.length; i += CHUNK_SIZE) {
+      const chunk = allPhotos.slice(i, i + CHUNK_SIZE);
+      const isLastChunk = i + CHUNK_SIZE >= allPhotos.length;
+      
+      const photoPage = createPageContainer();
+      let html = ``;
+      
+      if (i === 0) {
+        html += `<h2 style="font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 30px; text-align: center;">الصور المرفقة / Attached Photos</h2>`;
+      } else {
+        html += `<div style="height: 50px;"></div>`; // spacer
+      }
+      
+      html += `<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">`;
+      chunk.forEach(photo => {
+        html += `
+          <div style="width: 220px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px; box-sizing: border-box; background-color: #f9fafb;">
+            <img src="${photo.src}" style="max-width: 100%; height: 140px; object-fit: contain; margin-bottom: 10px;"/>
+            <br/>
+            <b style="font-size: 13px; color: #1f2937; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${photo.label}</b>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      
+      // If this is the last chunk of photos and there's space left (e.g. 6 photos or less)
+      if (isLastChunk && chunk.length <= 6) {
+        html += signaturesHTML;
+      }
 
-    page2Container.innerHTML = `
-      <h2 style="font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 30px; text-align: center;">الصور المرفقة / Attached Photos</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-        ${photosBase64.license ? `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${photosBase64.license}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة الرخصة / License Photo</b></div>` : ""}
-        ${photosBase64.permit ? `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${photosBase64.permit}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة التصريح / Permit Photo</b></div>` : ""}
-        ${photosBase64.vehicle ? `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${photosBase64.vehicle}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة المركبة / Vehicle Photo</b></div>` : ""}
-        ${photosBase64.plate ? `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${photosBase64.plate}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة اللوحة / Plate Photo</b></div>` : ""}
-        ${photosBase64.id ? `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${photosBase64.id}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة الهوية / ID Photo</b></div>` : ""}
-        ${othersBase64.map((b64, idx) => `<div style="width: 320px; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 8px;"><img src="${b64}" style="max-width: 100%; height: 200px; object-fit: contain; margin-bottom: 10px;"/><br/><b style="font-size: 14px;">صورة إضافية / Additional Photo ${idx + 1}</b></div>`).join("")}
-      </div>
-    `;
-    document.body.appendChild(page2Container);
+      photoPage.innerHTML = html;
+      pagesContainers.push(photoPage);
+
+      // If this is the last chunk but it's too full, add a new dedicated signatures page
+      if (isLastChunk && chunk.length > 6) {
+        const sigPage = createPageContainer();
+        sigPage.innerHTML = signaturesHTML;
+        pagesContainers.push(sigPage);
+      }
+    }
   }
 
   try {
@@ -346,42 +365,25 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Render Page 1
-    const canvas1 = await html2canvas(page1Container, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#FFFFFF",
-    });
-    const imgData1 = canvas1.toDataURL("image/png");
-    const imgHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
-    pdf.addImage(imgData1, "PNG", 0, 0, pdfWidth, imgHeight1);
-
-    // Render Page 2 if exists
-    if (page2Container) {
-      const canvas2 = await html2canvas(page2Container, {
+    for (let i = 0; i < pagesContainers.length; i++) {
+      const container = pagesContainers[i];
+      document.body.appendChild(container);
+      
+      const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#FFFFFF",
       });
-      const imgData2 = canvas2.toDataURL("image/png");
       
-      // Calculate how many A4 pages we need for the photos
-      const imgHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
-      let heightLeft = imgHeight2;
-      let position = 0;
-
-      // Add the first page of photos
-      pdf.addPage();
-      pdf.addImage(imgData2, "PNG", 0, position, pdfWidth, imgHeight2);
-      heightLeft -= pdfHeight;
-
-      // Add extra pages if the photos overflow the single A4 page
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight2;
+      const imgData = canvas.toDataURL("image/png");
+      
+      if (i > 0) {
         pdf.addPage();
-        pdf.addImage(imgData2, "PNG", 0, position, pdfWidth, imgHeight2);
-        heightLeft -= pdfHeight;
       }
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      
+      document.body.removeChild(container);
     }
 
     const fileName = `مخالفة_${data.reference_no || "بدون_رقم"}_${data.date || "تاريخ"}.pdf`;
