@@ -166,7 +166,7 @@ export const PDFExporter: React.FC<PDFExporterProps> = ({ data, onSuccess, valid
                         { file: data.photo_vehicle, label: "المركبة / Vehicle" },
                         { file: data.photo_plate, label: "اللوحة / Plate" },
                         { file: data.photo_id, label: "الهوية / ID" },
-                        ...data.photo_others.map((file, idx) => ({ file, label: `أخرى ${idx + 1}` })),
+                        ...data.photo_others.map((item, idx) => ({ file: item.file, label: item.description || `أخرى / Other ${idx + 1}` })),
                       ].map((photo, idx) => (
                         <div key={idx} className="text-center">
                           <div className="border border-gray-200 rounded-lg h-20 flex items-center justify-center overflow-hidden bg-gray-50">

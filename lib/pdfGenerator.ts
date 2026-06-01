@@ -392,7 +392,10 @@ export const generateViolationPDF = async (data: ViolationFormData): Promise<voi
     console.error("Failed to generate PDF:", error);
     throw error;
   } finally {
-    if (document.body.contains(page1Container)) document.body.removeChild(page1Container);
-    if (page2Container && document.body.contains(page2Container)) document.body.removeChild(page2Container);
+    pagesContainers.forEach((container) => {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    });
   }
 };
